@@ -1,7 +1,9 @@
 # passport/models.py
 from django.db import models
+from django.conf import settings
 
 class Passport(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='passport', default=1)  # Temporary default value
     last_name = models.CharField("Фамилия", max_length=100)
     first_name = models.CharField("Имя", max_length=100)
     middle_name = models.CharField("Отчество", max_length=100, null=True, blank=True)
