@@ -1,0 +1,50 @@
+from rest_framework.exceptions import ValidationError, NotFound, AuthenticationFailed
+from rest_framework.viewsets import ModelViewSet
+from authentication.models import User
+from authentication.serializers import UserSerializer
+from rest_framework.decorators import action
+from rest_framework.response import Response
+
+from rest_framework.permissions import IsAuthenticated
+
+
+class UserViewSet(ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+    @action(methods=['POST'], detail=False, url_path='login')
+    def login(self, request):
+        if 'email' not in request.data:
+            raise ValidationError({'error': 'E-mail не может быть пустым'})
+        if 'password' not in request.data:
+            raise ValidationError({'error': 'Пароль не может быть пустым'})
+
+        try:
+            user = User.objects.get(email=request.data['email'])
+        except User.DoesNotExist:
+            raise NotFound({'error': 'Пользователь не найден'})
+
+        if not user.check_password(request.data['password']):
+            raise AuthenticationFailed({'error': 'Неверный пароль'})
+
+        if not user.is_active:
+            raise AuthenticationFailed({'error': 'Пользователь не активен'})
+
+        refresh = RefreshToken.for_user(user)
+        response = Response()
+        response.set_cookie('refresh', str(refresh))
+        response.data = {'accessToken': str(refresh.access_token)}
+
+        return response
+
+    @action(methods=['GET'], detail=False, permission_classes=[IsAuthenticated], url_path='me')
+    def get_user(self, request):
+        user = request.user
+        data = self.serializer_class(user).data
+        return Response(data)
+
+    @action(methods=['POST'], detail=False, url_path='logout', permission_classes=[IsAuthenticated])
+    def logout(self, request):
+        response = Response()
+        response.delete_cookie('refresh')
+        return response
