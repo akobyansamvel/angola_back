@@ -1,6 +1,6 @@
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
-
+from .managers import CustomUserManager  # Импортируем CustomUserManager
 
 class User(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(verbose_name='Имя', max_length=255)
@@ -14,7 +14,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'phone_number']
 
-    objects = BaseUserManager()
+    objects = CustomUserManager()  # Указываем здесь CustomUserManager
 
     def __str__(self):
         return self.email
